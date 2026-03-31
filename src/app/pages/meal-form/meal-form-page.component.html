@@ -1,0 +1,42 @@
+<section class="meal-form-card">
+  <header>
+    <p class="eyebrow">REGISTRO DE COMIDA</p>
+    <h1>Nueva comida</h1>
+    <p class="subtitle">Captura los detalles de lo que comiste hoy.</p>
+  </header>
+
+  @if (errorMessage) {
+    <p class="feedback error">{{ errorMessage }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Plato fuerte
+      <input type="text" formControlName="mainCourse" placeholder="Ejemplo: Pollo a la plancha" />
+    </label>
+
+    <label>
+      Entrada
+      <input type="text" formControlName="starter" placeholder="Ejemplo: Ensalada verde" />
+    </label>
+
+    <label>
+      Bebida
+      <input type="text" formControlName="drink" placeholder="Ejemplo: Agua natural" />
+    </label>
+
+    <label>
+      Foto de la comida
+      <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+    </label>
+
+    @if (imagePreview) {
+      <img class="preview" [src]="imagePreview" alt="Vista previa de la comida" />
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="primary-btn" [disabled]="isSaving">Guardar comida</button>
+      <a routerLink="/app/perfil">Cancelar</a>
+    </div>
+  </form>
+</section>

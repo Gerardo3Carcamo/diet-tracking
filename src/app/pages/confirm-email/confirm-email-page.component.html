@@ -1,0 +1,38 @@
+<section class="auth-card">
+  <p class="eyebrow">CONFIRMACIÓN</p>
+  <h1>Confirma tu correo</h1>
+  <p class="subtitle">Introduce el código que recibiste para activar tu cuenta.</p>
+
+  @if (errorMessage) {
+    <p class="feedback error">{{ errorMessage }}</p>
+  }
+
+  @if (infoMessage) {
+    <p class="feedback success">{{ infoMessage }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Correo
+      <input type="email" formControlName="email" placeholder="correo@dominio.com" />
+    </label>
+
+    <label>
+      Código
+      <input type="text" formControlName="code" placeholder="Ejemplo: 123456" />
+    </label>
+
+    <button class="primary-btn" type="submit">Confirmar correo</button>
+    <button type="button" class="secondary-btn" (click)="fetchSimulatedCode()">
+      Ver código simulado
+    </button>
+  </form>
+
+  @if (simulatedCode) {
+    <p class="code-tip">Código simulado actual: <strong>{{ simulatedCode }}</strong></p>
+  }
+
+  <p class="cta">
+    <a routerLink="/login">Volver a iniciar sesión</a>
+  </p>
+</section>

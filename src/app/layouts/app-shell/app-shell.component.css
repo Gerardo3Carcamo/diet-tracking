@@ -1,0 +1,136 @@
+.shell {
+  min-height: 100dvh;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 5.5rem;
+}
+
+.shell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(14, 56, 42, 0.08);
+  box-shadow: 0 20px 30px rgba(14, 56, 42, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.7rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f9fbf5;
+  background: linear-gradient(140deg, #1f5a4a, #357a59);
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #17322b;
+}
+
+.brand-subtitle {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  color: #4f7166;
+}
+
+.logout-btn {
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: #17322b;
+  background: #e7f1e6;
+  transition: filter 150ms ease;
+}
+
+.logout-btn:hover {
+  filter: brightness(0.96);
+}
+
+.desktop-nav {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(14, 56, 42, 0.06);
+}
+
+.desktop-nav a,
+.mobile-nav a {
+  text-decoration: none;
+  color: #35675b;
+  font-weight: 600;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.7rem;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.desktop-nav a:hover,
+.mobile-nav a:hover {
+  background: #edf5eb;
+  color: #17322b;
+}
+
+.desktop-nav .active-link,
+.mobile-nav .active-link {
+  background: #1f5a4a;
+  color: #f9fbf5;
+}
+
+.shell-content {
+  margin-top: 1rem;
+}
+
+.mobile-nav {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  display: none;
+  align-items: center;
+  justify-content: space-evenly;
+  border-radius: 0.95rem;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(14, 56, 42, 0.08);
+  box-shadow: 0 12px 25px rgba(14, 56, 42, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 700px) {
+  .shell {
+    padding-top: 1rem;
+  }
+
+  .desktop-nav {
+    display: none;
+  }
+
+  .mobile-nav {
+    display: flex;
+  }
+
+  .logout-btn {
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,56 @@
+<section class="auth-card">
+  <p class="eyebrow">DIET TRACKING</p>
+  <h1>Inicia sesión</h1>
+  <p class="subtitle">Lleva tu control diario de comidas en un solo lugar.</p>
+
+  @if (infoMessage) {
+    <p class="feedback success">{{ infoMessage }}</p>
+  }
+
+  @if (errorMessage) {
+    <p class="feedback error">{{ errorMessage }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Correo
+      <input type="email" formControlName="email" placeholder="correo@dominio.com" />
+    </label>
+    @if (form.controls.email.touched && form.controls.email.invalid) {
+      <small class="helper">Ingresa un correo válido.</small>
+    }
+
+    <label>
+      Contraseña
+      <div class="password-field">
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="Mínimo 6 caracteres"
+        />
+        <button type="button" (click)="showPassword.set(!showPassword())">
+          {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+    </label>
+    @if (form.controls.password.touched && form.controls.password.invalid) {
+      <small class="helper">La contraseña es obligatoria.</small>
+    }
+
+    <button class="primary-btn" type="submit">Entrar</button>
+  </form>
+
+  @if (pendingCode) {
+    <div class="confirmation-hint">
+      <p>
+        Tu correo aún no está confirmado. Código simulado: <strong>{{ pendingCode }}</strong>
+      </p>
+      <button type="button" (click)="goToConfirmation()">Confirmar correo</button>
+    </div>
+  }
+
+  <p class="cta">
+    ¿No tienes cuenta?
+    <a routerLink="/registro">Crear cuenta</a>
+  </p>
+</section>

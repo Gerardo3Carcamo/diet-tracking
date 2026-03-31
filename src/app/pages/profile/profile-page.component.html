@@ -1,0 +1,37 @@
+<section class="profile-panel">
+  <header class="profile-header">
+    <div>
+      <p class="eyebrow">MI PERFIL</p>
+      <h1>Resumen de comidas</h1>
+      <p class="subtitle">Usuario: {{ currentUser()?.email }}</p>
+    </div>
+    <a class="register-link" routerLink="/app/registro-comida">Registrar comida</a>
+  </header>
+
+  <article class="metric-card">
+    <p>Total de comidas registradas</p>
+    <h2>{{ totalMeals }}</h2>
+  </article>
+
+  <section class="history-block">
+    <h3>Últimas 5 comidas</h3>
+
+    @if (!latestMeals.length) {
+      <p class="empty-state">
+        Aún no tienes comidas registradas. Ve a "Registro de comida" para comenzar.
+      </p>
+    }
+
+    @for (meal of latestMeals; track meal.id) {
+      <article class="meal-card">
+        <img [src]="meal.photoDataUrl" alt="Foto de comida registrada" />
+        <div class="meal-content">
+          <p><strong>Plato fuerte:</strong> {{ meal.mainCourse }}</p>
+          <p><strong>Entrada:</strong> {{ meal.starter }}</p>
+          <p><strong>Bebida:</strong> {{ meal.drink }}</p>
+          <time>{{ meal.createdAt | date: 'dd/MM/yyyy HH:mm' }}</time>
+        </div>
+      </article>
+    }
+  </section>
+</section>
