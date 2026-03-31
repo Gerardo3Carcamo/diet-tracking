@@ -23,7 +23,9 @@
       <input type="password" formControlName="confirmPassword" placeholder="Repite tu contraseña" />
     </label>
 
-    <button class="primary-btn" type="submit">Crear cuenta</button>
+    <button class="primary-btn" type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Creando...' : 'Crear cuenta' }}
+    </button>
   </form>
 
   @if (generatedCode && registeredEmail) {

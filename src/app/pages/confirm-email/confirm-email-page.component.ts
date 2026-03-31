@@ -23,6 +23,7 @@ export class ConfirmEmailPageComponent implements OnInit {
   errorMessage = '';
   infoMessage = '';
   simulatedCode: string | null = null;
+  isSubmitting = false;
 
   ngOnInit(): void {
     const emailFromQuery = this.route.snapshot.queryParamMap.get('email');
@@ -40,14 +41,16 @@ export class ConfirmEmailPageComponent implements OnInit {
 
     this.simulatedCode = this.authService.getPendingConfirmationCode(email);
     if (!this.simulatedCode) {
-      this.errorMessage = 'No hay código pendiente para ese correo.';
-    } else {
-      this.errorMessage = '';
-      this.infoMessage = 'Se encontró un código pendiente (modo demo).';
+      this.errorMessage = 'No hay codigo pendiente para ese correo.';
+      this.infoMessage = '';
+      return;
     }
+
+    this.errorMessage = '';
+    this.infoMessage = 'Se encontro un codigo pendiente (modo demo).';
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.errorMessage = '';
     this.infoMessage = '';
 
@@ -57,12 +60,15 @@ export class ConfirmEmailPageComponent implements OnInit {
     }
 
     const { email, code } = this.form.getRawValue();
-    const result = this.authService.confirmEmail(email, code);
+    this.isSubmitting = true;
+    const result = await this.authService.confirmEmail(email, code);
+    this.isSubmitting = false;
+
     if (!result.ok) {
       this.errorMessage = result.error ?? 'No fue posible confirmar el correo.';
       return;
     }
 
-    this.router.navigate(['/login'], { queryParams: { confirmed: '1' } });
+    await this.router.navigate(['/login'], { queryParams: { confirmed: '1' } });
   }
 }

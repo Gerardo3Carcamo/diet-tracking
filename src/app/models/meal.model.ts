@@ -1,6 +1,5 @@
 export interface MealEntry {
   id: string;
-  userId: string;
   mainCourse: string;
   starter: string;
   drink: string;
@@ -13,4 +12,11 @@ export interface NewMealPayload {
   starter: string;
   drink: string;
   photoDataUrl: string;
+}
+
+export interface ProfileSummary {
+  userId: string;
+  email: string;
+  totalMeals: number;
+  latestMeals: MealEntry[];
 }

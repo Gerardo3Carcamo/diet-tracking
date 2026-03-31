@@ -52,7 +52,7 @@ export class MealFormPageComponent {
     reader.readAsDataURL(file);
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.errorMessage = '';
 
     if (this.form.invalid) {
@@ -61,14 +61,24 @@ export class MealFormPageComponent {
       return;
     }
 
-    const user = this.authService.currentUser();
-    if (!user) {
-      this.router.navigate(['/login']);
+    if (!this.authService.isAuthenticated()) {
+      await this.router.navigate(['/login']);
       return;
     }
 
     this.isSaving = true;
-    this.mealService.createMeal(user.id, this.form.getRawValue());
-    this.router.navigate(['/app/perfil']);
+    try {
+      await this.mealService.createMeal(this.form.getRawValue());
+      await this.router.navigate(['/app/perfil']);
+    } catch (error) {
+      this.errorMessage =
+        error instanceof Error ? error.message : 'No fue posible registrar la comida.';
+
+      if (!this.authService.isAuthenticated()) {
+        await this.router.navigate(['/login']);
+      }
+    } finally {
+      this.isSaving = false;
+    }
   }
 }

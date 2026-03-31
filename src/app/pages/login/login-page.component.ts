@@ -18,20 +18,21 @@ export class LoginPageComponent implements OnInit {
   readonly showPassword = signal(false);
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]]
+    password: ['', [Validators.required]]
   });
 
   errorMessage = '';
   infoMessage = '';
   pendingCode: string | null = null;
+  isSubmitting = false;
 
   ngOnInit(): void {
     if (this.route.snapshot.queryParamMap.get('confirmed') === '1') {
-      this.infoMessage = 'Correo confirmado correctamente. Ya puedes iniciar sesión.';
+      this.infoMessage = 'Correo confirmado correctamente. Ya puedes iniciar sesion.';
     }
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.errorMessage = '';
     this.pendingCode = null;
 
@@ -40,20 +41,22 @@ export class LoginPageComponent implements OnInit {
       return;
     }
 
+    this.isSubmitting = true;
     const { email, password } = this.form.getRawValue();
-    const result = this.authService.login(email, password);
+    const result = await this.authService.login(email, password);
+    this.isSubmitting = false;
 
     if (!result.ok) {
-      this.errorMessage = result.error ?? 'No fue posible iniciar sesión.';
+      this.errorMessage = result.error ?? 'No fue posible iniciar sesion.';
       this.pendingCode = result.confirmationCode ?? null;
       return;
     }
 
-    this.router.navigate(['/app/perfil']);
+    await this.router.navigate(['/app/perfil']);
   }
 
   goToConfirmation(): void {
     const email = this.form.controls.email.value;
-    this.router.navigate(['/confirmar-correo'], { queryParams: { email } });
+    void this.router.navigate(['/confirmar-correo'], { queryParams: { email } });
   }
 }

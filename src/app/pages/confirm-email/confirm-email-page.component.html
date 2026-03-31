@@ -22,7 +22,9 @@
       <input type="text" formControlName="code" placeholder="Ejemplo: 123456" />
     </label>
 
-    <button class="primary-btn" type="submit">Confirmar correo</button>
+    <button class="primary-btn" type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Confirmando...' : 'Confirmar correo' }}
+    </button>
     <button type="button" class="secondary-btn" (click)="fetchSimulatedCode()">
       Ver código simulado
     </button>

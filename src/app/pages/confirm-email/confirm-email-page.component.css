@@ -69,6 +69,11 @@ input:focus {
   background: linear-gradient(120deg, #1f5a4a, #2d7a61);
 }
 
+.primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .secondary-btn {
   color: #214f42;
   background: #e7f1e6;

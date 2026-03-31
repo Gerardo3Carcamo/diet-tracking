@@ -112,6 +112,12 @@ h1 {
   border: 1px solid #d5e7d5;
 }
 
+.error-state {
+  color: #883724;
+  background: #fbe9e5;
+  border-color: #f3ccc3;
+}
+
 @media (max-width: 680px) {
   .profile-header {
     flex-direction: column;

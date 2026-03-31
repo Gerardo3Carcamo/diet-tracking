@@ -23,8 +23,9 @@ export class RegisterPageComponent {
   errorMessage = '';
   generatedCode: string | null = null;
   registeredEmail: string | null = null;
+  isSubmitting = false;
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.errorMessage = '';
     this.generatedCode = null;
     this.registeredEmail = null;
@@ -36,22 +37,25 @@ export class RegisterPageComponent {
 
     const { email, password, confirmPassword } = this.form.getRawValue();
     if (password !== confirmPassword) {
-      this.errorMessage = 'Las contraseñas no coinciden.';
+      this.errorMessage = 'Las contrasenas no coinciden.';
       return;
     }
 
-    const result = this.authService.register(email, password);
+    this.isSubmitting = true;
+    const result = await this.authService.register(email, password);
+    this.isSubmitting = false;
+
     if (!result.ok) {
       this.errorMessage = result.error ?? 'No fue posible registrar la cuenta.';
       return;
     }
 
     this.generatedCode = result.confirmationCode ?? null;
-    this.registeredEmail = email;
+    this.registeredEmail = email.trim().toLowerCase();
   }
 
   goToConfirmation(): void {
-    this.router.navigate(['/confirmar-correo'], {
+    void this.router.navigate(['/confirmar-correo'], {
       queryParams: { email: this.registeredEmail }
     });
   }

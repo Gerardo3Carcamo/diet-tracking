@@ -14,11 +14,19 @@
   </article>
 
   <section class="history-block">
-    <h3>Últimas 5 comidas</h3>
+    <h3>Ultimas 5 comidas</h3>
 
-    @if (!latestMeals.length) {
+    @if (errorMessage) {
+      <p class="empty-state error-state">{{ errorMessage }}</p>
+    }
+
+    @if (isLoading) {
+      <p class="empty-state">Cargando comidas...</p>
+    }
+
+    @if (!isLoading && !errorMessage && !latestMeals.length) {
       <p class="empty-state">
-        Aún no tienes comidas registradas. Ve a "Registro de comida" para comenzar.
+        Aun no tienes comidas registradas. Ve a "Registro de comida" para comenzar.
       </p>
     }
 

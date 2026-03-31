@@ -1,6 +1,6 @@
 <section class="auth-card">
   <p class="eyebrow">DIET TRACKING</p>
-  <h1>Inicia sesión</h1>
+  <h1>Inicia sesion</h1>
   <p class="subtitle">Lleva tu control diario de comidas en un solo lugar.</p>
 
   @if (infoMessage) {
@@ -17,16 +17,16 @@
       <input type="email" formControlName="email" placeholder="correo@dominio.com" />
     </label>
     @if (form.controls.email.touched && form.controls.email.invalid) {
-      <small class="helper">Ingresa un correo válido.</small>
+      <small class="helper">Ingresa un correo valido.</small>
     }
 
     <label>
-      Contraseña
+      Contrasena
       <div class="password-field">
         <input
           [type]="showPassword() ? 'text' : 'password'"
           formControlName="password"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Escribe tu contrasena"
         />
         <button type="button" (click)="showPassword.set(!showPassword())">
           {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
@@ -34,23 +34,25 @@
       </div>
     </label>
     @if (form.controls.password.touched && form.controls.password.invalid) {
-      <small class="helper">La contraseña es obligatoria.</small>
+      <small class="helper">La contrasena es obligatoria.</small>
     }
 
-    <button class="primary-btn" type="submit">Entrar</button>
+    <button class="primary-btn" type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Entrando...' : 'Entrar' }}
+    </button>
   </form>
 
   @if (pendingCode) {
     <div class="confirmation-hint">
       <p>
-        Tu correo aún no está confirmado. Código simulado: <strong>{{ pendingCode }}</strong>
+        Tu correo aun no esta confirmado. Codigo simulado: <strong>{{ pendingCode }}</strong>
       </p>
       <button type="button" (click)="goToConfirmation()">Confirmar correo</button>
     </div>
   }
 
   <p class="cta">
-    ¿No tienes cuenta?
+    No tienes cuenta?
     <a routerLink="/registro">Crear cuenta</a>
   </p>
 </section>

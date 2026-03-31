@@ -1,4 +1,7 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { AppUser } from '../models/user.model';
 
 interface AuthResult {
@@ -7,148 +10,222 @@ interface AuthResult {
   confirmationCode?: string;
 }
 
+interface ApiErrorResponse {
+  message?: string;
+}
+
+interface RegisterApiResponse {
+  userId: string;
+  email: string;
+  emailConfirmed: boolean;
+  confirmationCode: string;
+}
+
+interface LoginApiResponse {
+  token: string;
+  userId: string;
+  email: string;
+  emailConfirmed: boolean;
+  isAdminBypassUser: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly usersStorageKey = 'diet-tracking.users';
-  private readonly sessionStorageKey = 'diet-tracking.session-user-id';
-  private readonly currentUserState = signal<AppUser | null>(this.getSessionUser());
+  private readonly http = inject(HttpClient);
+  private readonly apiBaseUrl = environment.apiBaseUrl;
+
+  private readonly sessionUserStorageKey = 'diet-tracking.session-user';
+  private readonly authTokenStorageKey = 'diet-tracking.auth-token';
+  private readonly pendingCodeStorageKey = 'diet-tracking.pending-confirmation-codes';
+
+  private readonly currentUserState = signal<AppUser | null>(this.getStoredSessionUser());
+  private readonly authTokenState = signal<string | null>(this.getStoredAuthToken());
 
   readonly currentUser = computed(() => this.currentUserState());
-  readonly isAuthenticated = computed(() => this.currentUserState() !== null);
+  readonly isAuthenticated = computed(() => !!this.currentUserState() && !!this.authTokenState());
 
-  register(email: string, password: string): AuthResult {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = this.getUsers();
-
-    if (users.some((user) => user.email === normalizedEmail)) {
-      return { ok: false, error: 'Ya existe una cuenta con este correo.' };
+  constructor() {
+    if (!this.currentUserState() || !this.authTokenState()) {
+      this.clearSession();
     }
-
-    const confirmationCode = this.generateConfirmationCode();
-    const newUser: AppUser = {
-      id: this.generateId(),
-      email: normalizedEmail,
-      password,
-      emailConfirmed: false,
-      confirmationCode,
-      createdAt: new Date().toISOString()
-    };
-
-    this.saveUsers([...users, newUser]);
-
-    return { ok: true, confirmationCode };
   }
 
-  confirmEmail(email: string, code: string): AuthResult {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = this.getUsers();
-    const userIndex = users.findIndex((user) => user.email === normalizedEmail);
+  async register(email: string, password: string): Promise<AuthResult> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<RegisterApiResponse>(`${this.apiBaseUrl}/auth/register`, {
+          email: email.trim().toLowerCase(),
+          password
+        })
+      );
 
-    if (userIndex < 0) {
-      return { ok: false, error: 'No encontramos una cuenta para ese correo.' };
-    }
-
-    const user = users[userIndex];
-    if (user.emailConfirmed) {
-      return { ok: true };
-    }
-
-    if (!code.trim() || user.confirmationCode !== code.trim()) {
-      return { ok: false, error: 'El código de confirmación no es válido.' };
-    }
-
-    const updatedUser: AppUser = {
-      ...user,
-      emailConfirmed: true,
-      confirmationCode: null
-    };
-
-    users[userIndex] = updatedUser;
-    this.saveUsers(users);
-    this.syncCurrentUser(updatedUser);
-
-    return { ok: true };
-  }
-
-  login(email: string, password: string): AuthResult {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = this.getUsers();
-    const user = users.find((record) => record.email === normalizedEmail);
-
-    if (!user || user.password !== password) {
-      return { ok: false, error: 'Correo o contraseña incorrectos.' };
-    }
-
-    if (!user.emailConfirmed) {
+      this.savePendingConfirmationCode(response.email, response.confirmationCode);
+      return { ok: true, confirmationCode: response.confirmationCode };
+    } catch (error) {
       return {
         ok: false,
-        error: 'Debes confirmar tu correo antes de iniciar sesión.',
-        confirmationCode: user.confirmationCode ?? undefined
+        error: this.extractErrorMessage(error, 'No fue posible registrar la cuenta.')
       };
     }
+  }
 
-    localStorage.setItem(this.sessionStorageKey, user.id);
-    this.currentUserState.set(user);
+  async confirmEmail(email: string, code: string): Promise<AuthResult> {
+    const normalizedEmail = email.trim().toLowerCase();
 
-    return { ok: true };
+    try {
+      await firstValueFrom(
+        this.http.post(`${this.apiBaseUrl}/auth/confirm-email`, {
+          email: normalizedEmail,
+          code: code.trim()
+        })
+      );
+
+      this.clearPendingConfirmationCode(normalizedEmail);
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        error: this.extractErrorMessage(error, 'No fue posible confirmar el correo.')
+      };
+    }
+  }
+
+  async login(email: string, password: string): Promise<AuthResult> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<LoginApiResponse>(`${this.apiBaseUrl}/auth/login`, {
+          email: normalizedEmail,
+          password
+        })
+      );
+
+      const user: AppUser = {
+        id: response.userId,
+        email: response.email,
+        emailConfirmed: response.emailConfirmed,
+        isAdminBypassUser: response.isAdminBypassUser
+      };
+
+      this.persistSession(user, response.token);
+      return { ok: true };
+    } catch (error) {
+      const errorMessage = this.extractErrorMessage(error, 'No fue posible iniciar sesion.');
+      const confirmationCode = errorMessage.toLowerCase().includes('confirm')
+        ? this.getPendingConfirmationCode(normalizedEmail) ?? undefined
+        : undefined;
+
+      return {
+        ok: false,
+        error: errorMessage,
+        confirmationCode
+      };
+    }
   }
 
   logout(): void {
-    localStorage.removeItem(this.sessionStorageKey);
-    this.currentUserState.set(null);
+    this.clearSession();
   }
 
-  getUserById(userId: string): AppUser | null {
-    return this.getUsers().find((user) => user.id === userId) ?? null;
+  getAuthToken(): string | null {
+    return this.authTokenState();
+  }
+
+  syncCurrentUserFromProfile(userId: string, email: string): void {
+    const normalizedEmail = email.trim().toLowerCase();
+    const currentUser = this.currentUserState();
+
+    if (!currentUser) {
+      return;
+    }
+
+    if (currentUser.id === userId && currentUser.email === normalizedEmail) {
+      return;
+    }
+
+    const updatedUser: AppUser = {
+      ...currentUser,
+      id: userId,
+      email: normalizedEmail
+    };
+
+    this.currentUserState.set(updatedUser);
+    localStorage.setItem(this.sessionUserStorageKey, JSON.stringify(updatedUser));
   }
 
   getPendingConfirmationCode(email: string): string | null {
     const normalizedEmail = email.trim().toLowerCase();
-    const user = this.getUsers().find((record) => record.email === normalizedEmail);
-    return user?.confirmationCode ?? null;
+    const pendingCodes = this.getPendingConfirmationCodes();
+    return pendingCodes[normalizedEmail] ?? null;
   }
 
-  private getSessionUser(): AppUser | null {
-    const userId = localStorage.getItem(this.sessionStorageKey);
-    if (!userId) {
+  private persistSession(user: AppUser, token: string): void {
+    this.currentUserState.set(user);
+    this.authTokenState.set(token);
+    localStorage.setItem(this.sessionUserStorageKey, JSON.stringify(user));
+    localStorage.setItem(this.authTokenStorageKey, token);
+  }
+
+  private clearSession(): void {
+    this.currentUserState.set(null);
+    this.authTokenState.set(null);
+    localStorage.removeItem(this.sessionUserStorageKey);
+    localStorage.removeItem(this.authTokenStorageKey);
+  }
+
+  private getStoredSessionUser(): AppUser | null {
+    const storedUser = localStorage.getItem(this.sessionUserStorageKey);
+    if (!storedUser) {
       return null;
     }
 
-    return this.getUserById(userId);
-  }
-
-  private syncCurrentUser(updatedUser: AppUser): void {
-    const sessionUser = this.currentUserState();
-    if (sessionUser?.id === updatedUser.id) {
-      this.currentUserState.set(updatedUser);
+    try {
+      const user = JSON.parse(storedUser) as AppUser;
+      return user?.id && user?.email ? user : null;
+    } catch {
+      return null;
     }
   }
 
-  private getUsers(): AppUser[] {
-    const usersRaw = localStorage.getItem(this.usersStorageKey);
-    if (!usersRaw) {
-      return [];
+  private getStoredAuthToken(): string | null {
+    return localStorage.getItem(this.authTokenStorageKey);
+  }
+
+  private getPendingConfirmationCodes(): Record<string, string> {
+    const rawValue = localStorage.getItem(this.pendingCodeStorageKey);
+    if (!rawValue) {
+      return {};
     }
 
     try {
-      const users = JSON.parse(usersRaw) as AppUser[];
-      return Array.isArray(users) ? users : [];
+      const parsed = JSON.parse(rawValue) as Record<string, string>;
+      return parsed ?? {};
     } catch {
-      return [];
+      return {};
     }
   }
 
-  private saveUsers(users: AppUser[]): void {
-    localStorage.setItem(this.usersStorageKey, JSON.stringify(users));
+  private savePendingConfirmationCode(email: string, code: string): void {
+    const pendingCodes = this.getPendingConfirmationCodes();
+    pendingCodes[email.trim().toLowerCase()] = code;
+    localStorage.setItem(this.pendingCodeStorageKey, JSON.stringify(pendingCodes));
   }
 
-  private generateId(): string {
-    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  private clearPendingConfirmationCode(email: string): void {
+    const pendingCodes = this.getPendingConfirmationCodes();
+    delete pendingCodes[email.trim().toLowerCase()];
+    localStorage.setItem(this.pendingCodeStorageKey, JSON.stringify(pendingCodes));
   }
 
-  private generateConfirmationCode(): string {
-    return `${Math.floor(100000 + Math.random() * 900000)}`;
+  private extractErrorMessage(error: unknown, fallbackMessage: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const apiMessage = (error.error as ApiErrorResponse | undefined)?.message;
+      if (apiMessage?.trim()) {
+        return apiMessage;
+      }
+    }
+
+    return fallbackMessage;
   }
 }
